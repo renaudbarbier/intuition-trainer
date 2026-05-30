@@ -290,7 +290,7 @@ export default function App() {
         style={{
           margin: 0,
           // Scales with viewport width so it never overflows on mobile.
-          fontSize: 'clamp(22px, 7vw, 44px)',
+          fontSize: 'clamp(11px, 3.5vw, 22px)',
           fontWeight: 400,
           letterSpacing: 'clamp(0.15em, 3vw, 0.5em)',
           textIndent: 'clamp(0.15em, 3vw, 0.5em)',
