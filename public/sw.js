@@ -1,7 +1,11 @@
-/* Minimal service worker: makes the app installable and works offline.
-   App-shell requests are served cache-first then cached; cross-origin
-   requests (Wikipedia image lookups) always go to the network. */
-const CACHE = 'intuition-v1'
+/* Service worker: makes the app installable and keeps it up to date.
+
+   - Navigation (the HTML page): NETWORK-FIRST, so a new deploy is picked up
+     as soon as the phone is online (falls back to cache when offline).
+   - Other same-origin assets are content-hashed by Vite, so CACHE-FIRST is
+     safe (a new build produces new filenames).
+   - Cross-origin requests (Wikipedia image lookups) go straight to the network. */
+const CACHE = 'intuition-v3'
 const SHELL = ['./', './index.html', './manifest.webmanifest']
 
 self.addEventListener('install', (event) => {
@@ -23,21 +27,32 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return
 
   const url = new URL(request.url)
-  // Same-origin (the app shell): cache-first, then populate the cache.
-  if (url.origin === self.location.origin) {
+  if (url.origin !== self.location.origin) return // Wikipedia / image CDN: network.
+
+  // The HTML document: network-first so updates land immediately when online.
+  if (request.mode === 'navigate') {
     event.respondWith(
-      caches.match(request).then(
-        (cached) =>
-          cached ||
-          fetch(request)
-            .then((resp) => {
-              const copy = resp.clone()
-              caches.open(CACHE).then((c) => c.put(request, copy))
-              return resp
-            })
-            .catch(() => caches.match('./index.html')),
-      ),
+      fetch(request)
+        .then((resp) => {
+          const copy = resp.clone()
+          caches.open(CACHE).then((c) => c.put('./index.html', copy))
+          return resp
+        })
+        .catch(() => caches.match(request).then((r) => r || caches.match('./index.html'))),
     )
+    return
   }
-  // Cross-origin (Wikipedia / image CDN): leave to the network by default.
+
+  // Versioned assets: cache-first, then populate the cache.
+  event.respondWith(
+    caches.match(request).then(
+      (cached) =>
+        cached ||
+        fetch(request).then((resp) => {
+          const copy = resp.clone()
+          caches.open(CACHE).then((c) => c.put(request, copy))
+          return resp
+        }),
+    ),
+  )
 })
