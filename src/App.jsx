@@ -289,11 +289,14 @@ export default function App() {
       <h1
         style={{
           margin: 0,
-          fontSize: 44,
+          // Scales with viewport width so it never overflows on mobile.
+          fontSize: 'clamp(22px, 7vw, 44px)',
           fontWeight: 400,
-          letterSpacing: '0.5em',
-          textIndent: '0.5em',
+          letterSpacing: 'clamp(0.15em, 3vw, 0.5em)',
+          textIndent: 'clamp(0.15em, 3vw, 0.5em)',
           color: '#3a2e22',
+          textAlign: 'center',
+          maxWidth: '100%',
         }}
       >
         INTUITION
